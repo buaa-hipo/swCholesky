@@ -1,0 +1,56 @@
+CC = sw5cc
+CPP = mpiCC -host
+LINK = sw5g++ -mhybrid
+
+INCLUDEFLAGS = -I./common/ \
+				-I./cholesky/
+
+OPTFLAGS = -O2 -OPT:IEEE_arith=1
+FLAGS = -D GIVEN -D VERIFY -D COLDCACHE -D CHOL  -D PRUNE \
+		#-D DEBUG_CHECK 
+FLAGS += -D XMATH
+MPEFLAGS = -host  -msimd $(FLAGS)
+CPEFLAGS = -slave -msimd $(FLAGS)
+
+LINKFLAGS = -lm -lpthread -L/usr/sw-mpp/apps/share/lib -llapack -lblas -lgfortran\
+			-mallshare
+CPPFLAGS = $(FLAGS)
+
+#CHOLESKY_O = sw_parallel_PB_Cholesky_05.o sw_parallel_PB_Cholesky_05_pthread_inner.o 
+CHOLESKY_O = sw_parallel_PB_Cholesky_05.o sw_parallel_PB_Cholesky_05_pthread_inner.o \
+				sw_Reach.o def.o  \
+				sw_parallel_PB_Cholesky_wavefront.o sw_parallel_PB_Cholesky_wavefront_pthread_inner.o
+
+
+sw_cholesky: $(CHOLESKY_O) sw_choleskyTest01.o
+	$(LINK) ${OPTFLAGS} $^ -o $@ $(LINKFLAGS) 
+
+sw_wavefront: $(CHOLESKY_O) sw_choleskyTest03.o
+	$(LINK) ${OPTFLAGS} $^ -o $@ $(LINKFLAGS) 
+
+
+sw_choleskyTest01.o : ./examples/sw_choleskyTest01.cpp
+	$(CPP) ${OPTFLAGS} $(CPPFLAGS) -c $< -o $@ $(INCLUDEFLAGS)
+sw_choleskyTest03.o : ./examples/sw_choleskyTest03.cpp
+	$(CPP) ${OPTFLAGS} $(CPPFLAGS) -c $< -o $@ $(INCLUDEFLAGS)
+def.o: ./common/def.cpp
+	$(CPP) ${OPTFLAGS} $(CPPFLAGS) -c $< -o $@ $(INCLUDEFLAGS)
+sw_Reach.o: ./common/sw_Reach.cpp
+	$(CPP) ${OPTFLAGS} $(CPPFLAGS) -c $< -o $@ $(INCLUDEFLAGS)
+sw_parallel_PB_Cholesky_05_pthread_inner.o : ./cholesky/sw_parallel_PB_Cholesky_05_pthread_inner.c
+	$(CC) ${OPTFLAGS} $(MPEFLAGS) -c $< -o $@
+sw_parallel_PB_Cholesky_05.o : ./cholesky/sw_parallel_PB_Cholesky_05.c
+	$(CC) ${OPTFLAGS} $(MPEFLAGS) -c $< -o $@
+sw_parallel_PB_Cholesky_05_check.o : ./cholesky/sw_parallel_PB_Cholesky_05_check.c
+	$(CC) ${OPTFLAGS} $(MPEFLAGS) -c $< -o $@
+sw_parallel_PB_Cholesky_wavefront.o : ./cholesky/sw_parallel_PB_Cholesky_wavefront.c
+	$(CC) ${OPTFLAGS} $(MPEFLAGS) -c $< -o $@
+sw_parallel_PB_Cholesky_wavefront_pthread_inner.o : ./cholesky/sw_parallel_PB_Cholesky_wavefront_pthread_inner.c
+	$(CC) ${OPTFLAGS} $(MPEFLAGS) -c $< -o $@
+tripleQueue.o: ./cholesky/tripleQueue.c
+	$(CC) ${OPTFLAGS} $(MPEFLAGS) -c $< -o $@
+
+.PHONY: clean
+
+clean:
+	rm -f $(CHOLESKY_O) sw_cholesky

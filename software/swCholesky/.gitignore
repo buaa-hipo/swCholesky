@@ -1,0 +1,13 @@
+*.o
+*.a
+sw_cholesky
+x86-perm/*
+!x86-perm/makefile
+!x86-perm/main.cpp
+/log/
+nohup.out
+tags
+.tune_err
+core.*
+.vscode/*
+!.vscode/sftp.json

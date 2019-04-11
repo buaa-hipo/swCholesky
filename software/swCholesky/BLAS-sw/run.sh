@@ -1,0 +1,1 @@
+bsub -I -b -q q_sw_expr -n 1 -share_size 6000 -host_stack 1024 -cgsp 64 -o log $1 
